@@ -913,7 +913,7 @@
 
     .photos-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 12px;
     }
 
@@ -1124,7 +1124,6 @@
     <li><a href="#levels">Niveaux</a></li>
     <li><a href="#why">Pourquoi nous</a></li>
     <li><a href="#actualites">Actualités</a></li>
-    <li><a href="#galerie">Galerie</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#inscription" class="nav-cta">Inscriptions 2026-2027</a></li>
   </ul>
@@ -1371,20 +1370,11 @@
         </div>
       </div>
 
-      <!-- Colonne droite : publications Facebook -->
+      <!-- Colonne droite : galerie photos -->
       <div>
-        <h3 class="actualites-col-title">📸 Publications Facebook</h3>
-        <div class="fb-page-wrapper">
-          <div class="fb-page"
-            data-href="https://www.facebook.com/profile.php?id=100063631150397"
-            data-tabs="timeline"
-            data-width="500"
-            data-height="600"
-            data-small-header="true"
-            data-adapt-container-width="true"
-            data-hide-cover="false"
-            data-show-facepile="false">
-          </div>
+        <h3 class="actualites-col-title">📸 Galerie Photos</h3>
+        <div id="galerie-container">
+          <p class="galerie-vide">Chargement de la galerie...</p>
         </div>
       </div>
 
@@ -1392,17 +1382,6 @@
   </div>
 </section>
 
-<!-- GALERIE SECTION -->
-<section id="galerie">
-  <div class="galerie-inner">
-    <div class="section-label">Moments partagés</div>
-    <h2 class="section-title">Galerie Photos</h2>
-    <div class="section-line"></div>
-    <div id="galerie-container">
-      <p class="galerie-vide">Chargement de la galerie...</p>
-    </div>
-  </div>
-</section>
 
 <!-- Lightbox -->
 <div class="lightbox" id="lightbox">
@@ -1656,7 +1635,6 @@
       <ul>
         <li><a href="#about">À propos</a></li>
         <li><a href="#actualites">Actualités</a></li>
-        <li><a href="#galerie">Galerie</a></li>
     <li><a href="#social">Réseaux</a></li>
         <li><a href="#levels">Niveaux scolaires</a></li>
         <li><a href="#why">Nos atouts</a></li>
