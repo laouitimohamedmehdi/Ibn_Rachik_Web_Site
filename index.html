@@ -859,6 +859,129 @@
       background: #fff;
     }
 
+    /* ── GALERIE ── */
+    #galerie {
+      background: var(--white);
+      padding: 80px 5%;
+    }
+
+    .galerie-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .galerie-vide {
+      color: var(--gray);
+      font-size: 14px;
+      font-style: italic;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .evenement-block {
+      margin-bottom: 56px;
+    }
+
+    .evenement-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--light-gray);
+    }
+
+    .evenement-date {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      background: var(--gold);
+      color: #111;
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .evenement-nom {
+      font-size: 18px;
+      font-weight: 800;
+      color: #222;
+      margin: 0;
+    }
+
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .photo-item {
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      border-radius: 8px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+      display: block;
+    }
+
+    .photo-item:hover img {
+      transform: scale(1.05);
+    }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .lightbox.active {
+      display: flex;
+    }
+
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 4px;
+      cursor: default;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 28px;
+      color: white;
+      font-size: 36px;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.8;
+    }
+
+    .lightbox-close:hover { opacity: 1; }
+
+    @media (max-width: 900px) {
+      .photos-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .photos-grid { grid-template-columns: 1fr; }
+    }
+
     /* ── FOOTER ── */
     footer {
       background: #1a0002;
@@ -1001,6 +1124,7 @@
     <li><a href="#levels">Niveaux</a></li>
     <li><a href="#why">Pourquoi nous</a></li>
     <li><a href="#actualites">Actualités</a></li>
+    <li><a href="#galerie">Galerie</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#inscription" class="nav-cta">Inscriptions 2026-2027</a></li>
   </ul>
@@ -1268,6 +1392,24 @@
   </div>
 </section>
 
+<!-- GALERIE SECTION -->
+<section id="galerie">
+  <div class="galerie-inner">
+    <div class="section-label">Moments partagés</div>
+    <h2 class="section-title">Galerie Photos</h2>
+    <div class="section-line"></div>
+    <div id="galerie-container">
+      <p class="galerie-vide">Chargement de la galerie...</p>
+    </div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <span class="lightbox-close" id="lightbox-close">&times;</span>
+  <img src="" alt="" id="lightbox-img">
+</div>
+
 <!-- CONTACT -->
 <section id="contact">
   <div class="contact-grid">
@@ -1514,6 +1656,7 @@
       <ul>
         <li><a href="#about">À propos</a></li>
         <li><a href="#actualites">Actualités</a></li>
+        <li><a href="#galerie">Galerie</a></li>
     <li><a href="#social">Réseaux</a></li>
         <li><a href="#levels">Niveaux scolaires</a></li>
         <li><a href="#why">Nos atouts</a></li>
@@ -1642,6 +1785,89 @@
   }
 
   chargerAnnonces();
+</script>
+
+<script>
+  // Galerie photos depuis Google Sheets
+  const GALERIE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSb9KyQ85AmDYdtkgmdwefvgwP1jbEWRp4CkituJsFztECa9MpsH5wzZEA73V1NBTrkIXAnFSd3icpb/pub?gid=1100199057&single=true&output=csv';
+
+  function escapeAttr(str) {
+    return (str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  async function chargerGalerie() {
+    const conteneur = document.getElementById('galerie-container');
+    if (!conteneur) return;
+
+    try {
+      const response = await fetch(GALERIE_URL);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const texte = await response.text();
+      const lignes = texte.trim().split('\n').slice(1);
+
+      const evenements = lignes
+        .map(ligne => {
+          const cols = parseCSVLine(ligne);
+          return {
+            date: cols[0] || '',
+            evenement: cols[1] || '',
+            photos: (cols[2] || '').split('|').map(u => u.trim()).filter(u => u.length > 0)
+          };
+        })
+        .filter(e => e.evenement && e.photos.length > 0);
+
+      if (evenements.length === 0) {
+        conteneur.innerHTML = '<p class="galerie-vide">Aucune photo pour le moment.</p>';
+        return;
+      }
+
+      conteneur.innerHTML = evenements.map(e => `
+        <div class="evenement-block">
+          <div class="evenement-header">
+            <span class="evenement-date">${escapeHTML(e.date)}</span>
+            <h3 class="evenement-nom">${escapeHTML(e.evenement)}</h3>
+          </div>
+          <div class="photos-grid">
+            ${e.photos.map(url => `
+              <div class="photo-item" onclick="ouvrirLightbox('${escapeAttr(url)}')">
+                <img src="${escapeAttr(url)}" alt="${escapeHTML(e.evenement)}" loading="lazy">
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+
+    } catch (err) {
+      console.warn('[chargerGalerie]', err);
+      conteneur.innerHTML = '<p class="galerie-vide">Galerie temporairement indisponible.</p>';
+    }
+  }
+
+  function ouvrirLightbox(url) {
+    const lb = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    img.src = url;
+    lb.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function fermerLightbox() {
+    const lb = document.getElementById('lightbox');
+    lb.classList.remove('active');
+    document.getElementById('lightbox-img').src = '';
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('lightbox')?.addEventListener('click', fermerLightbox);
+  document.getElementById('lightbox-close')?.addEventListener('click', function(e) {
+    e.stopPropagation();
+    fermerLightbox();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') fermerLightbox();
+  });
+
+  chargerGalerie();
 </script>
 
 </body>
