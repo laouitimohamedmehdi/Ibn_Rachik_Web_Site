@@ -934,6 +934,48 @@
       transform: scale(1.05);
     }
 
+    /* Carousel */
+    .carousel-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .carousel-wrapper img {
+      width: 100%;
+      height: auto;
+      display: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .carousel-wrapper img.carousel-active {
+      display: block;
+    }
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      border: none;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 50%;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .carousel-btn:hover { background: rgba(0,0,0,0.85); }
+    .carousel-prev { left: 8px; }
+    .carousel-next { right: 8px; }
+    .carousel-counter {
+      text-align: center;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #999;
+    }
+
     /* Lightbox */
     .lightbox {
       display: none;
@@ -1787,6 +1829,17 @@
     }));
   }
 
+  function carouselNav(id, dir) {
+    const el = document.getElementById(id);
+    const imgs = el.querySelectorAll('img');
+    let cur = parseInt(el.dataset.cur || '0');
+    imgs[cur].classList.remove('carousel-active');
+    cur = (cur + dir + imgs.length) % imgs.length;
+    el.dataset.cur = cur;
+    imgs[cur].classList.add('carousel-active');
+    el.querySelector('.carousel-counter').textContent = `${cur + 1} / ${imgs.length}`;
+  }
+
   async function chargerGalerie() {
     const conteneur = document.getElementById('galerie-container');
     if (!conteneur) return;
@@ -1835,21 +1888,30 @@
         return;
       }
 
-      conteneur.innerHTML = avecPhotos.map(e => `
+      conteneur.innerHTML = avecPhotos.map((e, idx) => {
+        const photosHtml = e.photos.length <= 2
+          ? `<div class="photos-grid">${e.photos.map(p => `
+              <div class="photo-item" onclick="ouvrirLightbox('${escapeAttr(p.full)}')">
+                <img src="${escapeAttr(p.thumb)}" alt="${escapeHTML(e.evenement)}" loading="lazy">
+              </div>`).join('')}</div>`
+          : `<div class="carousel-wrapper" id="carousel-${idx}" data-cur="0">
+              ${e.photos.map((p, i) => `
+                <img src="${escapeAttr(p.thumb)}" alt="${escapeHTML(e.evenement)}" loading="lazy"
+                     class="${i === 0 ? 'carousel-active' : ''}"
+                     onclick="ouvrirLightbox('${escapeAttr(p.full)}')">`).join('')}
+              <button class="carousel-btn carousel-prev" onclick="carouselNav('carousel-${idx}',-1)">&#10094;</button>
+              <button class="carousel-btn carousel-next" onclick="carouselNav('carousel-${idx}',1)">&#10095;</button>
+              <div class="carousel-counter">1 / ${e.photos.length}</div>
+            </div>`;
+        return `
         <div class="evenement-block">
           <div class="evenement-header">
             <span class="evenement-date">${escapeHTML(e.date)}</span>
             <h3 class="evenement-nom">${escapeHTML(e.evenement)}</h3>
           </div>
-          <div class="photos-grid">
-            ${e.photos.map(p => `
-              <div class="photo-item" onclick="ouvrirLightbox('${escapeAttr(p.full)}')">
-                <img src="${escapeAttr(p.thumb)}" alt="${escapeHTML(e.evenement)}" loading="lazy">
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `).join('');
+          ${photosHtml}
+        </div>`;
+      }).join('');
 
     } catch (err) {
       console.warn('[chargerGalerie]', err);
