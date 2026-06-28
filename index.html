@@ -1806,7 +1806,8 @@
             dossier: (cols[2] || '').trim()
           };
         })
-        .filter(e => e.evenement && e.dossier);
+        .filter(e => e.evenement && e.dossier)
+        .slice(-3);
 
       if (evenementsRaw.length === 0) {
         conteneur.innerHTML = '<p class="galerie-vide">Aucune photo pour le moment.</p>';
