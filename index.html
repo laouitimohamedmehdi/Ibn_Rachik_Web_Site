@@ -1807,7 +1807,8 @@
           };
         })
         .filter(e => e.evenement && e.dossier)
-        .slice(-3);
+        .slice(-3)
+        .reverse();
 
       if (evenementsRaw.length === 0) {
         conteneur.innerHTML = '<p class="galerie-vide">Aucune photo pour le moment.</p>';
