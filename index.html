@@ -1768,9 +1768,26 @@
 <script>
   // Galerie photos depuis Google Sheets
   const GALERIE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRtHnD9eVRVLiEtqKTNIaGe_m52UyuC8zeFnpsiEhpfGqbgomWZh2b1VR1B8oHkiSgIsFQn7ex-j53J/pub?gid=1378658995&single=true&output=csv';
+  const DRIVE_API_KEY = 'AIzaSyDI8DQ47OKAckXPgBnrXrh1ga8WvYqEBNY';
 
   function escapeAttr(str) {
     return (str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function extraireFolderId(url) {
+    const match = url.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  }
+
+  async function getPhotosFromFolder(folderId) {
+    const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'&key=${DRIVE_API_KEY}&fields=files(id,name)&orderBy=name`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Drive API: ${response.status}`);
+    const data = await response.json();
+    return (data.files || []).map(f => ({
+      thumb: `https://drive.google.com/thumbnail?id=${f.id}&sz=w600`,
+      full: `https://lh3.googleusercontent.com/d/${f.id}`
+    }));
   }
 
   async function chargerGalerie() {
@@ -1783,32 +1800,52 @@
       const texte = await response.text();
       const lignes = texte.trim().split('\n').slice(1);
 
-      const evenements = lignes
+      const evenementsRaw = lignes
         .map(ligne => {
           const cols = parseCSVLine(ligne);
           return {
             date: cols[0] || '',
             evenement: cols[1] || '',
-            photos: (cols[2] || '').split('|').map(u => u.trim()).filter(u => u.length > 0)
+            dossier: (cols[2] || '').trim()
           };
         })
-        .filter(e => e.evenement && e.photos.length > 0);
+        .filter(e => e.evenement && e.dossier);
 
-      if (evenements.length === 0) {
+      if (evenementsRaw.length === 0) {
         conteneur.innerHTML = '<p class="galerie-vide">Aucune photo pour le moment.</p>';
         return;
       }
 
-      conteneur.innerHTML = evenements.map(e => `
+      conteneur.innerHTML = '<p class="galerie-vide">Chargement des photos...</p>';
+
+      const evenements = await Promise.all(evenementsRaw.map(async e => {
+        const folderId = extraireFolderId(e.dossier);
+        if (!folderId) return { ...e, photos: [] };
+        try {
+          const photos = await getPhotosFromFolder(folderId);
+          return { ...e, photos };
+        } catch {
+          return { ...e, photos: [] };
+        }
+      }));
+
+      const avecPhotos = evenements.filter(e => e.photos.length > 0);
+
+      if (avecPhotos.length === 0) {
+        conteneur.innerHTML = '<p class="galerie-vide">Aucune photo pour le moment.</p>';
+        return;
+      }
+
+      conteneur.innerHTML = avecPhotos.map(e => `
         <div class="evenement-block">
           <div class="evenement-header">
             <span class="evenement-date">${escapeHTML(e.date)}</span>
             <h3 class="evenement-nom">${escapeHTML(e.evenement)}</h3>
           </div>
           <div class="photos-grid">
-            ${e.photos.map(url => `
-              <div class="photo-item" onclick="ouvrirLightbox('${escapeAttr(url)}')">
-                <img src="${escapeAttr(url)}" alt="${escapeHTML(e.evenement)}" loading="lazy">
+            ${e.photos.map(p => `
+              <div class="photo-item" onclick="ouvrirLightbox('${escapeAttr(p.full)}')">
+                <img src="${escapeAttr(p.thumb)}" alt="${escapeHTML(e.evenement)}" loading="lazy">
               </div>
             `).join('')}
           </div>
