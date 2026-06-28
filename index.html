@@ -935,24 +935,24 @@
     }
 
     /* Carousel */
-    @keyframes carouselFade {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
     .carousel-wrapper {
       position: relative;
+      display: grid;
       width: 100%;
     }
     .carousel-wrapper img {
+      grid-area: 1/1;
       width: 100%;
       height: auto;
-      display: none;
+      opacity: 0;
+      transition: opacity 0.35s ease;
       border-radius: 8px;
       cursor: pointer;
+      pointer-events: none;
     }
     .carousel-wrapper img.carousel-active {
-      display: block;
-      animation: carouselFade 0.35s ease;
+      opacity: 1;
+      pointer-events: auto;
     }
     .carousel-btn {
       position: absolute;
